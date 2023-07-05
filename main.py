@@ -59,16 +59,18 @@ s3 = boto3.resource('s3')
 # Name of the S3 bucket
 bucket_name = 'audio-guestbook'
 
-# Try to upload the file to the S3 bucket
-try:
-    s3.Bucket(bucket_name).upload_file(WAVE_OUTPUT_FILENAME, WAVE_OUTPUT_FILENAME)
-    print(f'Successfully uploaded {WAVE_OUTPUT_FILENAME} to {bucket_name}')
-    
-    # If the upload was successful, delete the file
-    if os.path.exists(WAVE_OUTPUT_FILENAME):
-        os.remove(WAVE_OUTPUT_FILENAME)
-        print(f'Successfully deleted local file {WAVE_OUTPUT_FILENAME}')
-    
-except Exception as e:
-    print(f'Failed to upload {WAVE_OUTPUT_FILENAME} to {bucket_name} due to {e}')
-    # If the upload failed, the file is not deleted and you can retry the upload later
+# Try to upload all .wav files in the current directory to the S3 bucket
+for filename in os.listdir('.'):
+    if filename.endswith('.wav'):
+        try:
+            s3.Bucket(bucket_name).upload_file(filename, filename)
+            print(f'Successfully uploaded {filename} to {bucket_name}')
+            
+            # If the upload was successful, delete the file
+            if os.path.exists(filename):
+                os.remove(filename)
+                print(f'Successfully deleted local file {filename}')
+        
+        except Exception as e:
+            print(f'Failed to upload {filename} to {bucket_name} due to {e}')
+            # If the upload failed, the file is not deleted and you can retry the upload later
