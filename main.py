@@ -9,8 +9,11 @@ FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 44100
 RECORD_SECONDS = 5
-WAVE_OUTPUT_FILENAME = "output.wav"
 USB_DEVICE_INDEX = 1
+
+# Get the current timestamp and format it as a string
+timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+WAVE_OUTPUT_FILENAME = f"output-{timestamp}.wav"
 
 # Create a PyAudio instance
 p = pyaudio.PyAudio()
