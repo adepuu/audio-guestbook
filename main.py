@@ -2,6 +2,7 @@ import boto3
 import os
 import pyaudio
 import wave
+from datetime import datetime
 
 # Set the chunk size, sample format, channel, sample rate, and duration
 CHUNK = 4*1024
@@ -12,7 +13,7 @@ RECORD_SECONDS = 5
 USB_DEVICE_INDEX = 1
 
 # Get the current timestamp and format it as a string
-timestamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 WAVE_OUTPUT_FILENAME = f"output-{timestamp}.wav"
 
 # Create a PyAudio instance
@@ -56,7 +57,7 @@ wf.close()
 s3 = boto3.resource('s3')
 
 # Name of the S3 bucket
-bucket_name = 'your-bucket-name'
+bucket_name = 'audio-guestbook'
 
 # Try to upload the file to the S3 bucket
 try:
