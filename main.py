@@ -3,13 +3,23 @@ import os
 import pyaudio
 import wave
 from datetime import datetime
+import noisereduce as nr
+from scipy.io import wavfile
+
+# MIC ----
+# Hijau - Biru
+# Hitam - Ungu
+
+# Earpiece ----
+#
+#
 
 # Set the chunk size, sample format, channel, sample rate, and duration
 CHUNK = 4*1024
-FORMAT = pyaudio.paInt16
+FORMAT = pyaudio.paInt24
 CHANNELS = 1
-RATE = 44100
-RECORD_SECONDS = 5
+RATE = 48000
+RECORD_SECONDS = 10
 USB_DEVICE_INDEX = 1
 
 # Get the current timestamp and format it as a string
@@ -52,6 +62,16 @@ wf.setsampwidth(p.get_sample_size(FORMAT))
 wf.setframerate(RATE)
 wf.writeframes(b''.join(frames))
 wf.close()
+
+# Load the recorded audio
+rate, data = wavfile.read(WAVE_OUTPUT_FILENAME)
+
+# Perform noise reduction
+reduced_noise = nr.reduce_noise(y=data, sr=rate)
+
+# Save the noise-reduced audio to a new WAV file
+reduced_filename = f"reduced-{timestamp}.wav"
+wavfile.write(reduced_filename, rate, reduced_noise.astype(data.dtype))
 
 # Create a session using your AWS credentials
 s3 = boto3.resource('s3')
