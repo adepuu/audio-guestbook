@@ -5,14 +5,8 @@ import wave
 from datetime import datetime
 import noisereduce as nr
 from scipy.io import wavfile
-
-# MIC ----
-# Hijau - Biru
-# Hitam - Ungu
-
-# Earpiece ----
-#
-#
+import RPi.GPIO as GPIO
+import atexit
 
 # Set the chunk size, sample format, channel, sample rate, and duration
 CHUNK = 4*1024
@@ -26,71 +20,109 @@ USB_DEVICE_INDEX = 1
 timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 WAVE_OUTPUT_FILENAME = f"output-{timestamp}.wav"
 
+GPIO.setmode(GPIO.BOARD)
+GPIO.setup(10, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+
+isOpen = False
+frames = []
+
 # Create a PyAudio instance
 p = pyaudio.PyAudio()
 
-# Open a stream
+# Define the stream variable in the global scope
 stream = p.open(format=FORMAT,
                 channels=CHANNELS,
                 rate=RATE,
                 input=True,
                 frames_per_buffer=CHUNK,
-                input_device_index=USB_DEVICE_INDEX)  # replace with your device index
+                input_device_index=USB_DEVICE_INDEX)
 
-print("* recording")
+def exit_handler():
+    global stream
+    global p
+    
+    print("Gracefully Exiting")
+    if stream.is_active():
+        stream.stop_stream()
+    stream.close()
 
-# Read and store audio data in a list
-frames = []
+    # Terminate the PortAudio interface
+    p.terminate()
+    GPIO.cleanup()
 
-for i in range(0, int(RATE / CHUNK * RECORD_SECONDS)):
-    data = stream.read(CHUNK)
-    frames.append(data)
+# Register the exit handler to be called when the program is about to exit
+atexit.register(exit_handler)
 
-print("* done recording")
+def button_callback(channel):
+    global isOpen
+    global frames
+    global stream
 
-# Stop and close the stream
-stream.stop_stream()
-stream.close()
+    # When the button is pressed, start recording
+    if GPIO.input(10): # if pin is HIGH
+        isOpen = True
+        print("Recording started")
 
-# Terminate the PortAudio interface
-p.terminate()
+        # Start the stream
+        stream.start_stream()
 
-# Save the recorded data to a WAV file
-wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
-wf.setnchannels(CHANNELS)
-wf.setsampwidth(p.get_sample_size(FORMAT))
-wf.setframerate(RATE)
-wf.writeframes(b''.join(frames))
-wf.close()
+        # Start recording
+        while isOpen:
+            data = stream.read(CHUNK)
+            frames.append(data)
 
-# Load the recorded audio
-rate, data = wavfile.read(WAVE_OUTPUT_FILENAME)
+    # When the button is released, stop recording
+    else: # if pin is LOW
+        isOpen = False
+        print("Recording stopped")
 
-# Perform noise reduction
-reduced_noise = nr.reduce_noise(y=data, sr=rate)
+        # Stop and close the stream
+        stream.stop_stream()
 
-# Save the noise-reduced audio to a new WAV file
-reduced_filename = f"reduced-{timestamp}.wav"
-wavfile.write(reduced_filename, rate, reduced_noise.astype(data.dtype))
+        p.terminate()
 
-# Create a session using your AWS credentials
-s3 = boto3.resource('s3')
+        # Save the recorded data to a WAV file
+        wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
+        wf.setnchannels(CHANNELS)
+        wf.setsampwidth(p.get_sample_size(FORMAT))
+        wf.setframerate(RATE)
+        wf.writeframes(b''.join(frames))
+        wf.close()
 
-# Name of the S3 bucket
-bucket_name = 'audio-guestbook'
+        # Load the recorded audio
+        rate, data = wavfile.read(WAVE_OUTPUT_FILENAME)
 
-# Try to upload all .wav files in the current directory to the S3 bucket
-for filename in os.listdir('.'):
-    if filename.endswith('.wav'):
+        # Perform noise reduction
+        reduced_noise = nr.reduce_noise(y=data, sr=rate)
+
+        # Save the noise-reduced audio to a new WAV file
+        reduced_filename = f"reduced-{timestamp}.wav"
+        wavfile.write(reduced_filename, rate, reduced_noise.astype(data.dtype))
+
+        # If the original file exists, delete it
+        if os.path.exists(WAVE_OUTPUT_FILENAME):
+            os.remove(WAVE_OUTPUT_FILENAME)
+            print(f'Successfully deleted local file {WAVE_OUTPUT_FILENAME}')
+
+        # Create a session using your AWS credentials
+        s3 = boto3.resource('s3')
+
+        # Name of the S3 bucket
+        bucket_name = 'audio-guestbook'
+
+        # Try to upload the .wav file to the S3 bucket
         try:
-            s3.Bucket(bucket_name).upload_file(filename, filename)
-            print(f'Successfully uploaded {filename} to {bucket_name}')
-            
+            s3.Bucket(bucket_name).upload_file(reduced_filename, reduced_filename)
+            print(f'Successfully uploaded {reduced_filename} to {bucket_name}')
+
             # If the upload was successful, delete the file
-            if os.path.exists(filename):
-                os.remove(filename)
-                print(f'Successfully deleted local file {filename}')
-        
+            if os.path.exists(reduced_filename):
+                os.remove(reduced_filename)
+                print(f'Successfully deleted local file {reduced_filename}')
+
         except Exception as e:
-            print(f'Failed to upload {filename} to {bucket_name} due to {e}')
-            # If the upload failed, the file is not deleted and you can retry the upload later
+            print(f'Failed to upload {reduced_filename} to {bucket_name} due to {e}')
+        frames = []
+
+# Use BOTH edge detection and increase bouncetime
+GPIO.add_event_detect(10, GPIO.BOTH, callback=button_callback, bouncetime=300)
