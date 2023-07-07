@@ -36,6 +36,23 @@ pygame.mixer.init()
 # Create a PyAudio instance
 p = pyaudio.PyAudio()
 
+# Function to check if the desired device is available
+def is_device_available():
+    device_count = p.get_device_count()
+    for i in range(device_count):
+        device_info = p.get_device_info_by_index(i)
+        if (device_info['index'] == USB_DEVICE_INDEX and 
+            device_info['maxInputChannels'] >= CHANNELS):
+            return True
+    return False
+
+# Wait until the correct audio device is available
+while not is_device_available():
+    print("Waiting for the correct audio device to be available...")
+    time.sleep(1)  # wait for 1 second before checking again
+
+print("Audio device found")
+
 # Define the stream variable in the global scope
 stream = None
 
@@ -176,7 +193,6 @@ def button_callback(channel):
 
         # Start recording
         while isOpen.is_set() and GPIO.input(10):
-            print("recording ...")
             data = stream.read(CHUNK)
             frames.append(data)
 
