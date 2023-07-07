@@ -21,8 +21,6 @@ RATE = 48000
 RECORD_SECONDS = 10
 USB_DEVICE_INDEX = 1
 
-
-
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(10, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
@@ -40,9 +38,10 @@ def exit_handler():
     global p
     
     print("Gracefully Exiting")
-    if stream.is_active():
-        stream.stop_stream()
-    stream.close()
+    if stream is not None:
+        if stream.is_active():
+            stream.stop_stream()
+        stream.close()
 
     # Terminate the PortAudio interface
     p.terminate()
@@ -78,21 +77,26 @@ def process_and_upload(frames, timestamp):
     # Read and convert the 24-bit audio to 16-bit
     data, rate = sf.read(WAVE_OUTPUT_FILENAME, dtype='float32')
     # We'll now process the audio data in chunks using the noisereduce library
-    reduced_noise_chunks = []
-    for i in range(0, len(data), CHUNK):
-        chunk_data = data[i:i + CHUNK]
+    # reduced_noise_chunks = []
+    # for i in range(0, len(data), CHUNK):
+    #     chunk_data = data[i:i + CHUNK]
 
-        # replace 'chunk_data' with the data chunk you want to filter
-        filetered_chunk_data = apply_notch_filter(chunk_data, RATE)
+    #     # replace 'chunk_data' with the data chunk you want to filter
+    #     filetered_chunk_data = apply_notch_filter(chunk_data, RATE)
 
-        # And subsequently replace 'reduced_noise_chunk' with the filtered data before noise reduction
-        reduced_noise_chunk = nr.reduce_noise(y=filetered_chunk_data, sr=RATE)
+    #     # And subsequently replace 'reduced_noise_chunk' with the filtered data before noise reduction
+    #     reduced_noise_chunk = nr.reduce_noise(y=filetered_chunk_data, sr=RATE)
             
-        # Append reduced noise chunk to list
-        reduced_noise_chunks.append(reduced_noise_chunk)
+    #     # Append reduced noise chunk to list
+    #     reduced_noise_chunks.append(reduced_noise_chunk)
 
-    # Concatenate all the processed chunks
-    reduced_noise = np.concatenate(reduced_noise_chunks)
+    # # Concatenate all the processed chunks
+    # reduced_noise = np.concatenate(reduced_noise_chunks)
+    # Apply notch filter to the entire data
+    filtered_data = apply_notch_filter(data, RATE)
+
+    # Apply noise reduction to the filtered data
+    reduced_noise = nr.reduce_noise(y=filtered_data, sr=RATE)
     reduced_filename = f"reduced-{timestamp}.wav"
 
     # Save the result (Optionally use soundfile library if you want to retain the original file properties)
