@@ -50,6 +50,21 @@ def exit_handler():
 # Register the exit handler to be called when the program is about to exit
 atexit.register(exit_handler)
 
+from scipy.signal import iirnotch, lfilter
+
+def create_notch_filter(sample_rate, frequency, Q):
+    """Creates a notch (bandstop) filter at the given frequency."""
+    nyquist_rate = sample_rate / 2.0
+    normalized_frequency = frequency / nyquist_rate
+    b, a = iirnotch(normalized_frequency, Q)
+    return b, a
+
+def apply_notch_filter(data, sample_rate, frequency=60, Q=30):
+    """Applies a notch filter to the data."""
+    b, a = create_notch_filter(sample_rate, frequency, Q)
+    filtered_data = lfilter(b, a, data)
+    return filtered_data
+
 def process_and_upload(frames, timestamp):
     # Save the recorded data to a WAV file
     WAVE_OUTPUT_FILENAME = f"output-{timestamp}.wav"
@@ -68,8 +83,11 @@ def process_and_upload(frames, timestamp):
     for i in range(0, len(data), CHUNK):
         chunk_data = data[i:i + CHUNK]
 
-        # Perform noise reduction on the chunk
-        reduced_noise_chunk = nr.reduce_noise(y=chunk_data, sr=rate)
+        # replace 'chunk_data' with the data chunk you want to filter
+        filetered_chunk_data = apply_notch_filter(chunk_data, RATE)
+
+        # And subsequently replace 'reduced_noise_chunk' with the filtered data before noise reduction
+        reduced_noise_chunk = nr.reduce_noise(y=filetered_chunk_data, sr=RATE)
             
         # Append reduced noise chunk to list
         reduced_noise_chunks.append(reduced_noise_chunk)
