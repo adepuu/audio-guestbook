@@ -140,7 +140,7 @@ def button_callback(channel):
         frames = []
 
 # Use BOTH edge detection and increase bouncetime
-GPIO.add_event_detect(10, GPIO.BOTH, callback=button_callback, bouncetime=300)
+GPIO.add_event_detect(10, GPIO.BOTH, callback=button_callback, bouncetime=10)
 
 print("Listening for GPIO.BOTH event")
 
