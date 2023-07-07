@@ -52,11 +52,13 @@ atexit.register(exit_handler)
 
 def process_and_upload(frames, timestamp):
     # Save the recorded data to a WAV file
+    WAVE_OUTPUT_FILENAME = f"output-{timestamp}.wav"
+
     wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
     wf.setnchannels(CHANNELS)
     wf.setsampwidth(p.get_sample_size(FORMAT))
     wf.setframerate(RATE)
-        wf.writeframes(b''.join(frames))
+    wf.writeframes(b''.join(frames))
     wf.close()
 
     # Read and convert the 24-bit audio to 16-bit
@@ -113,7 +115,6 @@ def button_callback(channel):
     if GPIO.input(10): # if pin is HIGH
         # Get the current timestamp and format it as a string
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        WAVE_OUTPUT_FILENAME = f"output-{timestamp}.wav"
 
         isOpen.set()
         print("Recording started")
