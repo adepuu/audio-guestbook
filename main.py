@@ -75,6 +75,7 @@ def button_callback(channel):
 
         # Start recording
         while isOpen:
+            print("recording ...")
             data = stream.read(CHUNK)
             frames.append(data)
 
