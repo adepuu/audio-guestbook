@@ -33,12 +33,7 @@ frames = []
 p = pyaudio.PyAudio()
 
 # Define the stream variable in the global scope
-stream = p.open(format=FORMAT,
-                channels=CHANNELS,
-                rate=RATE,
-                input=True,
-                frames_per_buffer=CHUNK,
-                input_device_index=USB_DEVICE_INDEX)
+stream = None
 
 def exit_handler():
     global stream
@@ -60,11 +55,20 @@ def button_callback(channel):
     global isOpen
     global frames
     global stream
+    global p
 
     # When the button is pressed, start recording
     if GPIO.input(10): # if pin is HIGH
         isOpen = True
         print("Recording started")
+
+        # Open the stream
+        stream = p.open(format=FORMAT,
+                        channels=CHANNELS,
+                        rate=RATE,
+                        input=True,
+                        frames_per_buffer=CHUNK,
+                        input_device_index=USB_DEVICE_INDEX)
 
         # Start the stream
         stream.start_stream()
@@ -79,10 +83,10 @@ def button_callback(channel):
         isOpen = False
         print("Recording stopped")
 
-        # Stop and close the stream
+       # Stop and close the stream
         stream.stop_stream()
-
-        p.terminate()
+        stream.close()
+        stream = None
 
         # Save the recorded data to a WAV file
         wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
