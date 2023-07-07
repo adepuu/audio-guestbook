@@ -12,6 +12,7 @@ import threading
 from scipy.io import wavfile
 from datetime import datetime
 from scipy.signal import iirnotch, lfilter
+from playsound import playsound
 
 # Set the chunk size, sample format, channel, sample rate, and duration
 CHUNK = 4*1024
@@ -34,6 +35,13 @@ p = pyaudio.PyAudio()
 
 # Define the stream variable in the global scope
 stream = None
+
+def play_sound(filename):
+    try:
+        playsound(filename)
+        print(f'Successfully played {filename}')
+    except Exception as e:
+        print(f'Failed to play {filename} due to {e}')
 
 def exit_handler():
     global stream
@@ -131,6 +139,7 @@ def button_callback(channel):
 
     # When the button is pressed, start recording
     if GPIO.input(10): # if pin is HIGH
+        threading.Thread(target=play_sound, args=('welcome.wav',)).start()
         # Get the current timestamp and format it as a string
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
