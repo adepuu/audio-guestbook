@@ -1,5 +1,6 @@
 import boto3
 import os
+import time
 import pyaudio
 import wave
 from datetime import datetime
@@ -126,3 +127,11 @@ def button_callback(channel):
 
 # Use BOTH edge detection and increase bouncetime
 GPIO.add_event_detect(10, GPIO.BOTH, callback=button_callback, bouncetime=300)
+
+print("Listening for GPIO.BOTH event")
+
+try:
+    while True:
+        time.sleep(1)
+except KeyboardInterrupt:
+    print("Program stopped by user")
