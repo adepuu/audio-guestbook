@@ -8,6 +8,7 @@ import noisereduce as nr
 import boto3
 import atexit
 import RPi.GPIO as GPIO
+import threading
 from scipy.io import wavfile
 from datetime import datetime
 
@@ -26,7 +27,7 @@ WAVE_OUTPUT_FILENAME = f"output-{timestamp}.wav"
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(10, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
-isOpen = False
+isOpen = threading.Event()
 frames = []
 
 # Create a PyAudio instance
@@ -59,7 +60,7 @@ def button_callback(channel):
 
     # When the button is pressed, start recording
     if GPIO.input(10): # if pin is HIGH
-        isOpen = True
+        isOpen.set()
         print("Recording started")
 
         # Open the stream
@@ -74,14 +75,14 @@ def button_callback(channel):
         stream.start_stream()
 
         # Start recording
-        while isOpen:
+        while isOpen.is_set():
             print("recording ...")
             data = stream.read(CHUNK)
             frames.append(data)
 
     # When the button is released, stop recording
     else: # if pin is LOW
-        isOpen = False
+        isOpen.clear()
         print("Recording stopped")
 
        # Stop and close the stream
