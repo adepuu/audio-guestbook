@@ -1,15 +1,16 @@
-import wave
-import time
-import soundfile as sf
-import pyaudio
-import os
-import numpy as np
-import noisereduce as nr
-import boto3
-import atexit
 import RPi.GPIO as GPIO
-import threading
+import atexit
+import boto3
+import noisereduce as nr
+import numpy as np
+import os
+import pyaudio
 import pygame.mixer
+import soundfile as sf
+import sys
+import threading
+import time
+import wave
 from scipy.io import wavfile
 from datetime import datetime
 from scipy.signal import iirnotch, lfilter
@@ -46,10 +47,14 @@ def is_device_available():
             return True
     return False
 
-# Wait until the correct audio device is available
 while not is_device_available():
+    if tries <= 0:
+        print("Error: The correct audio device is not available after several attempts.")
+        sys.exit(1)  # exit the program with an error code
+
     print("Waiting for the correct audio device to be available...")
     time.sleep(1)  # wait for 1 second before checking again
+    tries -= 1  # decrement the number of tries
 
 print("Audio device found")
 
