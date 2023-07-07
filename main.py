@@ -15,7 +15,8 @@ from scipy.signal import iirnotch, lfilter
 
 # Set the chunk size, sample format, channel, sample rate, and duration
 CHUNK = 4*1024
-NR_CHUNK = 90000
+# Chunk size for noise reduction, each chunk will have max 100kb size
+NR_CHUNK = 100000
 FORMAT = pyaudio.paInt24
 CHANNELS = 1
 RATE = 48000
