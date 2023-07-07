@@ -75,13 +75,11 @@ def button_callback(channel):
         stream.start_stream()
 
         # Start recording
-        while isOpen.is_set():
+        while isOpen.is_set() and GPIO.input(10):
             print("recording ...")
             data = stream.read(CHUNK)
             frames.append(data)
 
-    # When the button is released, stop recording
-    else: # if pin is LOW
         isOpen.clear()
         print("Recording stopped")
 
