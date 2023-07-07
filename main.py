@@ -54,7 +54,7 @@ def process_and_upload(frames, timestamp):
     # Save the recorded data to a WAV file
     wf = wave.open(WAVE_OUTPUT_FILENAME, 'wb')
     wf.setnchannels(CHANNELS)
-        wf.setsampwidth(p.get_sample_size(FORMAT))
+    wf.setsampwidth(p.get_sample_size(FORMAT))
     wf.setframerate(RATE)
         wf.writeframes(b''.join(frames))
     wf.close()
@@ -114,7 +114,7 @@ def button_callback(channel):
         # Get the current timestamp and format it as a string
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         WAVE_OUTPUT_FILENAME = f"output-{timestamp}.wav"
-        
+
         isOpen.set()
         print("Recording started")
 
