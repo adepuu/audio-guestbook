@@ -11,6 +11,7 @@ import RPi.GPIO as GPIO
 import threading
 from scipy.io import wavfile
 from datetime import datetime
+from scipy.signal import iirnotch, lfilter
 
 # Set the chunk size, sample format, channel, sample rate, and duration
 CHUNK = 4*1024
@@ -49,8 +50,6 @@ def exit_handler():
 
 # Register the exit handler to be called when the program is about to exit
 atexit.register(exit_handler)
-
-from scipy.signal import iirnotch, lfilter
 
 def create_notch_filter(sample_rate, frequency, Q):
     """Creates a notch (bandstop) filter at the given frequency."""
