@@ -1,15 +1,15 @@
-import boto3
-import os
-import time
-import pyaudio
 import wave
-from datetime import datetime
+import time
 import soundfile as sf
+import pyaudio
+import os
 import numpy as np
 import noisereduce as nr
-from scipy.io import wavfile
-import RPi.GPIO as GPIO
+import boto3
 import atexit
+import RPi.GPIO as GPIO
+from scipy.io import wavfile
+from datetime import datetime
 
 # Set the chunk size, sample format, channel, sample rate, and duration
 CHUNK = 4*1024
