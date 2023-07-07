@@ -4,6 +4,8 @@ import time
 import pyaudio
 import wave
 from datetime import datetime
+import soundfile as sf
+import numpy as np
 import noisereduce as nr
 from scipy.io import wavfile
 import RPi.GPIO as GPIO
@@ -90,15 +92,27 @@ def button_callback(channel):
         wf.writeframes(b''.join(frames))
         wf.close()
 
-        # Load the recorded audio
-        rate, data = wavfile.read(WAVE_OUTPUT_FILENAME)
+        # Read and convert the 24-bit audio to 16-bit
+        data, rate = sf.read(WAVE_OUTPUT_FILENAME, dtype='float32')
 
-        # Perform noise reduction
-        reduced_noise = nr.reduce_noise(y=data, sr=rate)
+        # We'll now process the audio data in chunks using the noisereduce library
+        reduced_noise_chunks = []
 
-        # Save the noise-reduced audio to a new WAV file
+        for i in range(0, len(data), CHUNK):
+            chunk_data = data[i:i + CHUNK]
+
+            # Perform noise reduction on the chunk
+            reduced_noise_chunk = nr.reduce_noise(y=chunk_data, sr=rate)
+            
+            # Append reduced noise chunk to list
+            reduced_noise_chunks.append(reduced_noise_chunk)
+
+        # Concatenate all the processed chunks
+        reduced_noise = np.concatenate(reduced_noise_chunks)
         reduced_filename = f"reduced-{timestamp}.wav"
-        wavfile.write(reduced_filename, rate, reduced_noise.astype(data.dtype))
+
+        # Save the result (Optionally use soundfile library if you want to retain the original file properties)
+        sf.write(reduced_filename, reduced_noise, rate)
 
         # If the original file exists, delete it
         if os.path.exists(WAVE_OUTPUT_FILENAME):
